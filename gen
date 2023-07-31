@@ -1,0 +1,32 @@
+import os
+import xml.etree.ElementTree as ET
+
+def generate_changeset_sql(sql_file_path):
+    with open(sql_file_path, 'r') as sql_file:
+        sql_content = sql_file.read().strip()
+
+    changeset = ET.Element('changeset', attrib={'id': 'unique_id'})
+    comment = ET.SubElement(changeset, 'comment')
+    comment.text = 'SQL migration from file: {}'.format(os.path.basename(sql_file_path))
+    script = ET.SubElement(changeset, 'sql')
+    script.text = sql_content
+
+    return changeset
+
+def update_changelog(sql_directory, changelog_file):
+    root = ET.Element('databaseChangeLog')
+
+    for filename in os.listdir(sql_directory):
+        if filename.endswith('.sql'):
+            sql_file_path = os.path.join(sql_directory, filename)
+            changeset = generate_changeset_sql(sql_file_path)
+            root.append(changeset)
+
+    tree = ET.ElementTree(root)
+    tree.write(changelog_file)
+
+if __name__ == '__main__':
+    sql_directory_path = '/path/to/sql/files'
+    changelog_file_path = '/path/to/changelog.xml'
+
+    update_changelog(sql_directory_path, changelog_file_path)
